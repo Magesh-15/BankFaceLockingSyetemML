@@ -1,0 +1,69 @@
+clc;
+clear;
+
+% Step 1: Initialize Webcam
+cam = webcam();
+cam.Resolution = '640x360';
+
+% Step 2: Load Reference Face Image
+refImage = imread('reference_image.jpg');  % Authorized user image
+refGray = rgb2gray(refImage);
+
+% Detect features in reference image
+refPoints = detectSURFFeatures(refGray);
+[refFeatures, refPoints] = extractFeatures(refGray, refPoints);
+
+% Step 3: Initialize Face Detector and Point Tracker
+faceDetector = vision.CascadeObjectDetector();
+pointTracker = vision.PointTracker('MaxBidirectionalError', 2);
+videoPlayer = vision.VideoPlayer('Position', [100 100 432 240]);
+
+% Step 4: Variables
+run_loop = true;
+number_of_points = 0;
+frameCount = 0;
+
+% Step 5: Live Face Detection and Recognition
+while run_loop && frameCount < 300
+    frame = snapshot(cam);
+    grayFrame = rgb2gray(frame);
+    frameCount = frameCount + 1;
+    
+    if number_of_points < 10
+        % Detect face
+        bbox = step(faceDetector, grayFrame);
+        if ~isempty(bbox)
+            % Extract face region
+            faceROI = imcrop(grayFrame, bbox(1,:));
+            facePoints = detectSURFFeatures(faceROI);
+            [faceFeatures, facePoints] = extractFeatures(faceROI, facePoints);
+
+            % Match face with reference
+            facePairs = matchFeatures(faceFeatures, refFeatures);
+            matchedFacePoints = facePoints(facePairs(:,1), :);
+            
+            % Display result
+            if size(matchedFacePoints,1) >= 10
+                msg = ' Access Granted: Face Matched';
+                color = 'green';
+            else
+                msg = ' Access Denied: Face Not Recognized';
+                color = 'red';
+            end
+
+            % Draw face box
+            frame = insertObjectAnnotation(frame, 'rectangle', bbox(1,:), msg, 'Color', color, 'TextBoxOpacity', 0.9);
+            number_of_points = 0;  % Reset for next detection
+        end
+    end
+
+    % Display frame
+    step(videoPlayer, frame);
+    run_loop = isOpen(videoPlayer);
+end
+
+% Step 6: Release resources
+clear cam;
+release(videoPlayer);
+release(pointTracker);
+release(faceDetector);
