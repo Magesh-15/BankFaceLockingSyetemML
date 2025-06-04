@@ -1,0 +1,16 @@
+BankFaceLockingSystemML/
+├── main.m                  % Main MATLAB script
+├── reference_image.jpg     % Authorized user's face
+├── README.md               % Project description
+├── LICENSE                 % (Optional) open source license
+│
+├── /data/                  % Extra training images
+│   └── user1.jpg
+│
+├── /doc/                   % Documentation
+│   ├── architecture.png
+│   ├── flowchart.png
+│   └── report.pdf
+│
+└── /utils/                 % Helper functions
+    └── match_face.m
